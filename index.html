@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Data Keuangan HAPIA Jember</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--card:#fffdf8;--ink:#14302b;--mut:#6b7a74;--line:#e6e0d2;--in:#1f8a70;--out:#d1584c;--gold:#b8901f;--hero:#0f2e2a;--sh:0 1px 2px #0001,0 8px 24px -12px #0f2e2a30}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1613;--card:#12221e;--ink:#eaf1ee;--mut:#8fa39b;--line:#22372f;--in:#3ec9a3;--out:#ff8174;--gold:#e3b94c;--hero:#07110f;--sh:0 8px 24px -12px #000}}
+*{box-sizing:border-box;margin:0}body{font:15px/1.5 'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:60px}
+.wrap{max-width:1160px;margin:auto;padding:0 20px}
+header{background:var(--hero);color:#f4efe0;padding:28px 0 90px;border-bottom:3px solid var(--gold)}
+header .wrap{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+header small{letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;font-size:12px}
+h1{font:600 clamp(28px,5vw,44px)/1.1 Fraunces,serif;margin:4px 0}header p{opacity:.7;font-size:14px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+button,.btn{font:600 14px inherit;font-family:inherit;border:1px solid #ffffff40;background:#ffffff14;color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s}
+button:hover,.btn:hover{background:#ffffff26}.btn.gold,button.gold{background:var(--gold);border-color:var(--gold);color:#101;}
+.grid{display:grid;gap:16px}.k{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:-62px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--sh);animation:up .5s both}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+.card label{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.card b{display:block;font:600 26px Fraunces,serif;margin-top:4px}.card em{font-style:normal;font-size:12px;color:var(--mut)}
+.pos{color:var(--in)}.neg{color:var(--out)}
+h2{font:600 22px Fraunces,serif;margin:36px 0 14px}.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin:6px 0 14px}.bar i{display:block;height:100%;border-radius:9px}
+.row{display:flex;justify-content:space-between;font-size:13.5px;gap:8px}.tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px}
+.Aman,.Tercapai{background:#1f8a7022;color:var(--in)}.Waspada,.Berjalan{background:#d9a40022;color:var(--gold)}.Melebihi,.Rendah{background:#d1584c22;color:var(--out)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);padding:10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line)}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}tr:hover td{background:#b8901f10}
+.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}input,select{font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}input{flex:1;min-width:180px}
+svg text{fill:var(--mut);font:11px 'Plus Jakarta Sans'}#msg{text-align:center;padding:80px 20px;color:var(--mut)}
+footer{text-align:center;color:var(--mut);font-size:12.5px;margin-top:40px}
+</style></head><body>
+<header><div class="wrap"><div><small id="org">HAPIA Jember</small><h1>Laporan Keuangan <span id="yr"></span></h1><p id="sub">Memuat data…</p></div>
+<div class="btns"><label class="btn">📂 Pratinjau Excel<input id="up" type="file" accept=".xlsx" hidden></label><button class="gold" id="pdf" disabled>⬇ Unduh PDF Laporan</button></div></div></header>
+<main class="wrap"><div id="msg">Memuat data keuangan…</div><div id="app" hidden></div>
+<footer>Data bersumber dari <code>data/Data_Keuangan.xlsx</code> — ganti file tersebut di GitHub, situs otomatis diperbarui.</footer></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="app.js"></script></body></html>
