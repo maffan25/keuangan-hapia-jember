@@ -1,106 +1,143 @@
 (() => {
 'use strict';
-const c = document.getElementById('langit');
-if (!c) return;
-const g = c.getContext('2d');
+const cv = document.getElementById('langit'), ef = document.getElementById('efek');
+if (!cv || !ef) return;
 const diam = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rnd = (a, b) => a + Math.random() * (b - a);
-const LAP = [
-  { fill: '#04361f', blade: '#0a6b38', hMin: .5, hMax: .85, sp: 11, w: 2.2, base: .70, k: .55 },
-  { fill: '#05492a', blade: '#0f8a46', hMin: .6, hMax: 1, sp: 8, w: 2.6, base: .42, k: .8 },
-  { fill: '#06582f', blade: '#18b457', hMin: .7, hMax: 1.15, sp: 6, w: 3, base: .14, k: 1.05 }
-];
-let W = 0, H = 0, dpr = 1, gh = 90, bintang = [], rumput = [], bulan = null, jatuh = null, jatuhNext = 3, last = 0;
 
-function buatBulan() {
-  const r = W < 600 ? 20 : 30, s = r * 3, o = document.createElement('canvas');
-  o.width = o.height = s * dpr;
-  const q = o.getContext('2d'); q.scale(dpr, dpr);
-  q.fillStyle = '#ffe55c'; q.beginPath(); q.arc(s / 2, s / 2, r, 0, 6.283); q.fill();
-  q.globalCompositeOperation = 'destination-out';
-  q.beginPath(); q.arc(s / 2 + r * .45, s / 2 - r * .2, r * .88, 0, 6.283); q.fill();
-  return { o, s, r };
+/* ---------- Lapisan foto (WebGL): rumput tertiup angin, bintang berkelip, awan bergeser ---------- */
+const VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform sampler2D uTex; uniform vec2 uRes; uniform vec2 uImg; uniform float uT; uniform float uD;
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){return noise(p)*.55+noise(p*2.1)*.3+noise(p*4.3)*.15;}
+void main(){
+  vec2 frag=gl_FragCoord.xy; float t=uT;
+  float s=uRes.y/uImg.y;
+  float u=(frag.x-uRes.x*.5)/(uImg.x*s)+.5;
+  float v=frag.y/uRes.y;
+
+  float m=1.-smoothstep(0.,.42,v); m*=m;
+  float w=sin(u*14.-t*1.1+sin(v*9.+t*.4)*1.5)*.6+sin(u*37.-t*2.3+v*20.)*.25+.35;
+  float dx=m*(.011*w+.0016*sin(u*170.+t*3.+v*45.));
+  float dy=m*.0016*sin(u*60.-t*1.7);
+  vec2 uv=vec2(u+dx,clamp(v+dy,0.,1.));
+  uv.x=1.-abs(1.-mod(uv.x,2.));
+  vec3 c=texture2D(uTex,uv).rgb;
+
+  float l=dot(c,vec3(.299,.587,.114));
+  float sky=smoothstep(.45,.55,v);
+  float star=smoothstep(.28,.6,l)*sky;
+  float h=hash(floor(frag/(3.*uD)));
+  float tw=.4+.85*(.5+.5*sin(t*(.7+2.4*h)+h*60.));
+  c*=mix(1.,tw,star);
+
+  float cm=smoothstep(.22,.30,v)*(1.-smoothstep(.62,.8,v))*(1.-smoothstep(.12,.3,l));
+  float n=fbm(vec2(u*2.6+t*.012,v*3.2-t*.006));
+  c*=1.+(n-.5)*.9*cm;
+  c+=vec3(.01,.02,.03)*cm*n;
+
+  float g=.5+.5*sin(u*6.-t*.9+v*4.);
+  c*=1.+m*.22*(g-.35);
+
+  vec2 q=frag/uRes-.5; c*=1.-.45*dot(q,q);
+  gl_FragColor=vec4(c,1.);
+}`;
+
+let gl = null, prog, loc = {}, tex = null, img = null, W = 0, H = 0, dpr = 1;
+try { gl = cv.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' }); } catch (e) { gl = null; }
+
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; }
+function initGL() {
+  const v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
+  if (!v || !f) { gl = null; return; }
+  prog = gl.createProgram(); gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; return; }
+  gl.useProgram(prog);
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const p = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(p); gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+  ['uTex', 'uRes', 'uImg', 'uT', 'uD'].forEach(n => loc[n] = gl.getUniformLocation(prog, n));
+}
+function pasangTekstur() {
+  tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+function gambar(t) {
+  if (!gl || !tex) return;
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.uniform1i(loc.uTex, 0); gl.uniform2f(loc.uRes, cv.width, cv.height);
+  gl.uniform2f(loc.uImg, img.naturalWidth, img.naturalHeight); gl.uniform1f(loc.uT, t); gl.uniform1f(loc.uD, dpr);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-function resize() {
-  dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
-  c.width = W * dpr; c.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  gh = Math.max(78, Math.min(H * .12, 140));
-  const n = Math.max(60, Math.min(W * H / 9000, 230)) | 0;
-  bintang = Array.from({ length: n }, () => ({ x: rnd(0, W), y: rnd(0, H * .78), r: rnd(.4, 1.5), ph: rnd(0, 6.28), sp: rnd(.8, 2.6), v: rnd(.35, 1), gold: Math.random() < .14 }));
-  rumput = LAP.map((l, li) => {
-    const a = [];
-    for (let x = -6; x < W + 12; x += l.sp * rnd(.6, 1.3))
-      a.push({ x, h: gh * rnd(l.hMin, l.hMax) * .72, ph: rnd(0, 6.28), f: li === 2 && Math.random() < .05 ? (Math.random() < .5 ? '#ffd60a' : '#ef4444') : null });
-    return a;
-  });
-  bulan = buatBulan();
-  if (diam) draw(0, 0);
+/* ---------- Lapisan efek (2D): bintang jatuh dan kunang-kunang ---------- */
+const g = ef.getContext('2d');
+let kunang = [], jatuh = null, jatuhNext = 4, sprite = null;
+function buatSprite() {
+  const o = document.createElement('canvas'); o.width = o.height = 48; const q = o.getContext('2d');
+  const r = q.createRadialGradient(24, 24, 0, 24, 24, 24);
+  r.addColorStop(0, 'rgba(255,250,200,1)'); r.addColorStop(.2, 'rgba(230,255,120,.7)'); r.addColorStop(1, 'rgba(180,255,80,0)');
+  q.fillStyle = r; q.fillRect(0, 0, 48, 48); return o;
 }
-
-const angin = (x, t) => Math.sin(t * .7 - x * .0035) * .5 + Math.sin(t * 1.7 - x * .012) * .2 + .38;
-
-function draw(t, dt) {
+function ukur() {
+  dpr = Math.min(devicePixelRatio || 1, 1.75); W = innerWidth; H = innerHeight;
+  for (const c of [cv, ef]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  kunang = Array.from({ length: W < 600 ? 14 : 26 }, () => ({ x: rnd(0, W), y: rnd(H * .66, H * .97), s: rnd(5, 11), sp: rnd(.15, .5), ph: rnd(0, 6.28), a: rnd(10, 34), pl: rnd(.6, 1.6) }));
+  if (!sprite) sprite = buatSprite();
+  if (diam) gambar(0);
+}
+function efek(t, dt) {
   g.clearRect(0, 0, W, H);
-
-  const mr = bulan.r, mx = W - (W < 600 ? 56 : 120), my = W < 600 ? 118 : 122;
-  const gl = g.createRadialGradient(mx, my, mr * .5, mx, my, mr * 4);
-  gl.addColorStop(0, 'rgba(255,214,10,.22)'); gl.addColorStop(1, 'rgba(255,214,10,0)');
-  g.fillStyle = gl; g.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
-  g.drawImage(bulan.o, mx - bulan.s / 2, my - bulan.s / 2, bulan.s, bulan.s);
-
-  for (const b of bintang) {
-    const x = (((b.x - t * b.r * 1.4) % W) + W) % W;
-    g.globalAlpha = b.v * (.35 + .65 * (.5 + .5 * Math.sin(t * b.sp + b.ph)));
-    g.fillStyle = b.gold ? '#ffe55c' : '#fff';
-    g.beginPath(); g.arc(x, b.y, b.r, 0, 6.283); g.fill();
-  }
-  g.globalAlpha = 1;
-
-  if (!diam) {
-    if (jatuh) {
-      jatuh.a += dt;
-      const p = jatuh.a / jatuh.d;
-      if (p >= 1) { jatuh = null; jatuhNext = t + rnd(5, 10); }
-      else {
-        const x = jatuh.x + jatuh.vx * jatuh.a, y = jatuh.y + jatuh.vy * jatuh.a, m = Math.hypot(jatuh.vx, jatuh.vy);
-        const tx = x - jatuh.vx / m * 90, ty = y - jatuh.vy / m * 90;
-        const lg = g.createLinearGradient(x, y, tx, ty);
-        lg.addColorStop(0, 'rgba(255,255,255,' + (1 - p) + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)');
-        g.strokeStyle = lg; g.lineWidth = 2; g.lineCap = 'round';
-        g.beginPath(); g.moveTo(x, y); g.lineTo(tx, ty); g.stroke();
-      }
-    } else if (t > jatuhNext) jatuh = { x: rnd(W * .3, W * .95), y: rnd(0, H * .25), vx: -rnd(380, 520), vy: rnd(160, 260), a: 0, d: rnd(.8, 1.2) };
-  }
-
-  LAP.forEach((l, li) => {
-    const by = x => H - gh * l.base + Math.sin(x * .006 + li * 2.1) * 7 + Math.sin(x * .017 + li) * 3;
-    g.fillStyle = l.fill; g.beginPath(); g.moveTo(0, H);
-    for (let x = 0; x <= W + 14; x += 14) g.lineTo(x, by(x));
-    g.lineTo(W + 14, H); g.closePath(); g.fill();
-    g.strokeStyle = l.blade; g.lineWidth = l.w; g.lineCap = 'round'; g.beginPath();
-    const bunga = [];
-    for (const b of rumput[li]) {
-      const y0 = by(b.x), ang = angin(b.x, t) * b.h * .42 * l.k + Math.sin(t * 2.2 + b.ph) * b.h * .05;
-      const tx = b.x + ang, ty = y0 - b.h * (1 - Math.abs(ang) / (b.h * 2.4));
-      g.moveTo(b.x, y0 + 2); g.quadraticCurveTo(b.x + ang * .25, y0 - b.h * .55, tx, ty);
-      if (b.f) bunga.push([tx, ty, b.f]);
+  if (jatuh) {
+    jatuh.a += dt; const p = jatuh.a / jatuh.d;
+    if (p >= 1) { jatuh = null; jatuhNext = t + rnd(6, 12); }
+    else {
+      const x = jatuh.x + jatuh.vx * jatuh.a, y = jatuh.y + jatuh.vy * jatuh.a, m = Math.hypot(jatuh.vx, jatuh.vy);
+      const tx = x - jatuh.vx / m * 100, ty = y - jatuh.vy / m * 100, lg = g.createLinearGradient(x, y, tx, ty);
+      lg.addColorStop(0, 'rgba(255,255,255,' + (1 - p) + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+      g.strokeStyle = lg; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y); g.lineTo(tx, ty); g.stroke();
     }
-    g.stroke();
-    for (const [x, y, col] of bunga) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); }
-  });
+  } else if (t > jatuhNext) jatuh = { x: rnd(W * .35, W), y: rnd(0, H * .22), vx: -rnd(420, 560), vy: rnd(170, 260), a: 0, d: rnd(.8, 1.2) };
+  g.globalCompositeOperation = 'lighter';
+  for (const k of kunang) {
+    const x = k.x + Math.sin(t * k.sp + k.ph) * k.a + Math.sin(t * .35 - k.x * .004) * 14, y = k.y + Math.cos(t * k.sp * 1.3 + k.ph) * k.a * .5;
+    g.globalAlpha = Math.pow(Math.max(0, Math.sin(t * k.pl + k.ph)), 2) * .9;
+    g.drawImage(sprite, x - k.s, y - k.s, k.s * 2, k.s * 2);
+  }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
 }
 
+/* ---------- Jalankan ---------- */
+if (gl) initGL();
+ukur();
+if (gl) {
+  img = new Image();
+  img.onload = () => { try { pasangTekstur(); gambar(0); } catch (e) { gl = null; } };
+  img.src = 'assets/langit.jpg';
+}
+let last = 0;
 function loop(ms) {
-  const t = ms / 1000, dt = Math.min(t - last, .1);
-  last = t; draw(t, dt); requestAnimationFrame(loop);
+  const t = ms / 1000, dt = Math.min(t - last, .1); last = t;
+  gambar(t); efek(t, dt); requestAnimationFrame(loop);
 }
-
-resize();
 let lebar = W, tinggi = H, tm;
 addEventListener('resize', () => {
   clearTimeout(tm);
-  tm = setTimeout(() => { if (innerWidth !== lebar || Math.abs(innerHeight - tinggi) > 150) { lebar = innerWidth; tinggi = innerHeight; resize(); } }, 150);
+  tm = setTimeout(() => { if (innerWidth !== lebar || Math.abs(innerHeight - tinggi) > 150) { lebar = innerWidth; tinggi = innerHeight; ukur(); } }, 150);
 });
 if (!diam) requestAnimationFrame(loop);
 })();
