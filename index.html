@@ -1,43 +1,105 @@
-<!doctype html>
-<html lang="id"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Data Keuangan HAPIA Jember</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#f4f1ea;--card:#fffdf8;--ink:#14302b;--mut:#6b7a74;--line:#e6e0d2;--in:#1f8a70;--out:#d1584c;--gold:#b8901f;--hero:#0f2e2a;--sh:0 1px 2px #0001,0 8px 24px -12px #0f2e2a30}
-@media(prefers-color-scheme:dark){:root{--bg:#0b1613;--card:#12221e;--ink:#eaf1ee;--mut:#8fa39b;--line:#22372f;--in:#3ec9a3;--out:#ff8174;--gold:#e3b94c;--hero:#07110f;--sh:0 8px 24px -12px #000}}
-*{box-sizing:border-box;margin:0}body{font:15px/1.5 'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:60px}
-.wrap{max-width:1160px;margin:auto;padding:0 20px}
-header{background:var(--hero);color:#f4efe0;padding:28px 0 90px;border-bottom:3px solid var(--gold)}
-header .wrap{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
-header small{letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;font-size:12px}
-h1{font:600 clamp(28px,5vw,44px)/1.1 Fraunces,serif;margin:4px 0}header p{opacity:.7;font-size:14px}
-.btns{display:flex;gap:10px;flex-wrap:wrap}
-button,.btn{font:600 14px inherit;font-family:inherit;border:1px solid #ffffff40;background:#ffffff14;color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s}
-button:hover,.btn:hover{background:#ffffff26}.btn.gold,button.gold{background:var(--gold);border-color:var(--gold);color:#101;}
-.grid{display:grid;gap:16px}.k{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:-62px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--sh);animation:up .5s both}
-@keyframes up{from{opacity:0;transform:translateY(10px)}}
-.card label{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.card b{display:block;font:600 26px Fraunces,serif;margin-top:4px}.card em{font-style:normal;font-size:12px;color:var(--mut)}
-.pos{color:var(--in)}.neg{color:var(--out)}
-h2{font:600 22px Fraunces,serif;margin:36px 0 14px}.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin:6px 0 14px}.bar i{display:block;height:100%;border-radius:9px}
-.row{display:flex;justify-content:space-between;font-size:13.5px;gap:8px}.tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px}
-.Aman,.Tercapai{background:#1f8a7022;color:var(--in)}.Waspada,.Berjalan{background:#d9a40022;color:var(--gold)}.Melebihi,.Rendah{background:#d1584c22;color:var(--out)}
-.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);padding:10px;border-bottom:2px solid var(--line);white-space:nowrap}
-td{padding:10px;border-bottom:1px solid var(--line)}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}tr:hover td{background:#b8901f10}
-.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}input,select{font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}input{flex:1;min-width:180px}
-svg text{fill:var(--mut);font:11px 'Plus Jakarta Sans'}#msg{text-align:center;padding:80px 20px;color:var(--mut)}
-footer{text-align:center;color:var(--mut);font-size:12.5px;margin-top:40px}
-</style></head><body>
-<header><div class="wrap"><div><small id="org">HAPIA Jember</small><h1>Laporan Keuangan <span id="yr"></span></h1><p id="sub">Memuat data…</p></div>
-<div class="btns"><label class="btn">📂 Pratinjau Excel<input id="up" type="file" accept=".xlsx" hidden></label><button class="gold" id="pdf" disabled>⬇ Unduh PDF Laporan</button></div></div></header>
-<main class="wrap"><div id="msg">Memuat data keuangan…</div><div id="app" hidden></div>
-<footer>Data bersumber dari <code>data/Data_Keuangan.xlsx</code> — ganti file tersebut di GitHub, situs otomatis diperbarui.</footer></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kas HAPIA</title>
+<meta name="theme-color" content="#0b6b2b">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="nav">
+    <div class="brand"><img src="assets/logo.png" alt="Logo HAPIA"><div><b>HAPIA</b><small>Kas &amp; keuangan</small></div></div>
+    <nav>
+      <button class="tab on" data-view="ringkasan"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Ringkasan</span></button>
+      <button class="tab" data-view="transaksi"><svg viewBox="0 0 24 24"><path d="M7 4v14m0 0l-3-3m3 3l3-3M17 20V6m0 0l-3 3m3-3l3 3"/></svg><span>Transaksi</span></button>
+      <button class="tab" data-view="laporan"><svg viewBox="0 0 24 24"><path d="M5 20V10m7 10V4m7 16v-7"/></svg><span>Laporan</span></button>
+    </nav>
+    <p class="nav-note">Himpunan Alumni Pesantren Islam Al Irsyad</p>
+  </aside>
+
+  <main>
+    <header class="top">
+      <div><h1 id="judul">Ringkasan</h1><p id="tanggal"></p></div>
+      <button class="btn primary" id="tambah"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Catat transaksi</button>
+    </header>
+
+    <section id="ringkasan" class="view on">
+      <div class="hero">
+        <div class="saldo">
+          <span>Saldo kas HAPIA</span>
+          <strong id="saldo">Rp 0</strong>
+          <div class="saldo-row"><em id="saldoNote">Belum ada transaksi</em></div>
+        </div>
+        <div class="mini in"><span>Pemasukan bulan ini</span><strong id="bulanMasuk">Rp 0</strong></div>
+        <div class="mini out"><span>Pengeluaran bulan ini</span><strong id="bulanKeluar">Rp 0</strong></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-h"><h2>Arus kas 6 bulan terakhir</h2><div class="legend"><i class="g"></i>Masuk<i class="r"></i>Keluar</div></div>
+          <div id="chart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Transaksi terbaru</h2><button class="link" data-go="transaksi">Lihat semua</button></div>
+          <ul class="list" id="terbaru"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="transaksi" class="view">
+      <div class="panel">
+        <div class="filters">
+          <input type="search" id="cari" placeholder="Cari keterangan atau kategori">
+          <select id="fJenis"><option value="">Semua jenis</option><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select>
+          <input type="month" id="fBulan" aria-label="Bulan">
+          <button class="btn ghost" id="semuaBulan">Semua bulan</button>
+        </div>
+        <ul class="list big" id="daftar"></ul>
+      </div>
+    </section>
+
+    <section id="laporan" class="view">
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-h"><h2>Per kategori</h2><input type="month" id="lBulan" aria-label="Bulan laporan"></div>
+          <div id="kategori"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Data &amp; cadangan</h2></div>
+          <p class="hint">Data tersimpan di peramban perangkat ini. Unduh cadangan secara berkala dan simpan di tempat aman.</p>
+          <div class="actions">
+            <button class="btn ghost" id="csv">Unduh CSV</button>
+            <button class="btn ghost" id="backup">Unduh cadangan</button>
+            <button class="btn ghost" id="restore">Pulihkan cadangan</button>
+            <button class="btn danger" id="reset">Hapus semua data</button>
+            <input type="file" id="berkas" accept="application/json" hidden>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <form id="form" method="dialog">
+    <h2 id="dlgJudul">Catat transaksi</h2>
+    <div class="seg" role="radiogroup">
+      <label><input type="radio" name="jenis" value="masuk" checked><span>Pemasukan</span></label>
+      <label><input type="radio" name="jenis" value="keluar"><span>Pengeluaran</span></label>
+    </div>
+    <label class="f">Tanggal<input type="date" name="tgl" required></label>
+    <label class="f">Kategori<select name="kat" required></select></label>
+    <label class="f">Nominal (Rp)<input type="text" name="nominal" inputmode="numeric" placeholder="0" required autocomplete="off"></label>
+    <label class="f">Keterangan<input type="text" name="ket" maxlength="120" placeholder="Contoh: Iuran bulan Oktober, Pak Ahmad"></label>
+    <div class="dlg-act"><button type="button" class="btn ghost" id="batal">Batal</button><button class="btn primary" value="simpan">Simpan</button></div>
+  </form>
+</dialog>
+<div id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
