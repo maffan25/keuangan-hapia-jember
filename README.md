@@ -1,7 +1,7 @@
 # Kas HAPIA
 
 Web manajemen arus keuangan dan kas Himpunan Alumni Pesantren Islam Al Irsyad (HAPIA).
-Situs statis (HTML, CSS, JS) tanpa proses build.
+Situs statis (HTML, CSS, JS) tanpa proses build. Fitur: ringkasan keseluruhan, pengelompokan per event (pemasukan, pengeluaran, grafik, ringkasan), laporan bulanan, ekspor CSV dan cadangan.
 
 ## Deploy
 1. Unggah semua isi folder ini ke repositori GitHub.
