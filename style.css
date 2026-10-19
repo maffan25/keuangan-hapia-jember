@@ -172,6 +172,7 @@ main{padding-bottom:170px}
 @media print{#langit{display:none}body{background:#fff}.head h1{color:#000}.head .sub{color:#444}}
 
 /* Latar foto: langit malam & padang rumput */
-#langit{background:#02130c url(assets/langit.jpg) center bottom/cover no-repeat}
+#langit{background:#02130c}
+#langit.tanpa-gl{background:#02130c url(assets/langit.jpg) center bottom/cover no-repeat}
 #efek{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 .head h1,.head .sub,.back{text-shadow:0 1px 14px rgba(0,0,0,.55)}
