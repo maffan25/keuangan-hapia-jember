@@ -219,15 +219,20 @@ function efek(t, dt) {
 /* Jalankan */
 if (gl) initGL();
 ukur();
-let last = 0;
+let last = 0, jalan = false;
 function loop(ms) {
+  if (!jalan) return;
   const t = ms / 1000, dt = Math.min(t - last, .1); last = t;
   gambar(t); efek(t, dt); requestAnimationFrame(loop);
 }
+window.latarAktif = on => {
+  cv.style.display = ef.style.display = on ? '' : 'none';
+  if (on && !jalan) { jalan = true; last = performance.now() / 1000; if (diam) gambar(0); else requestAnimationFrame(loop); }
+  else if (!on) jalan = false;
+};
 let lebar = W, tinggi = H, tm;
 addEventListener('resize', () => {
   clearTimeout(tm);
   tm = setTimeout(() => { if (innerWidth !== lebar || Math.abs(innerHeight - tinggi) > 150) { lebar = innerWidth; tinggi = innerHeight; ukur(); } }, 150);
 });
-if (!diam) requestAnimationFrame(loop);
 })();

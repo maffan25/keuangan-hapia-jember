@@ -4,28 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kas HAPIA</title>
-<meta name="theme-color" content="#053d22">
+<meta name="theme-color" content="#08080f">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-bg="padang">
 <canvas id="langit" aria-hidden="true"></canvas>
 <canvas id="efek" aria-hidden="true"></canvas>
-<header class="bar">
-  <a class="brand" href="#/beranda"><img src="assets/logo.png" alt="Logo HAPIA"><span><b>HAPIA</b><small>Kas &amp; Keuangan</small></span></a>
+
+<header class="top">
+  <a class="brand" href="#/beranda"><span class="logo"><img id="logo" src="assets/logo.png" alt="Logo"></span><b id="brandNama">HAPIA</b></a>
   <nav class="pills" id="nav">
-    <a href="#/beranda" data-r="beranda">Beranda</a>
+    <a href="#/beranda" data-r="beranda">Dasbor</a>
     <a href="#/event" data-r="event">Event</a>
     <a href="#/transaksi" data-r="transaksi">Transaksi</a>
     <a href="#/laporan" data-r="laporan">Laporan</a>
   </nav>
-  <button class="btn gold" id="tambah"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Catat</span></button>
+  <div class="tools">
+    <button class="circ" id="cari" aria-label="Cari transaksi"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+    <button class="circ" id="gear" aria-label="Pengaturan tampilan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button class="ava" id="ava" aria-label="Profil dan pengaturan">P</button>
+  </div>
 </header>
 
 <main id="root"></main>
+<button class="fab" id="tambah" aria-label="Catat transaksi"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <dialog id="dTrx">
   <form id="fTrx" method="dialog">
@@ -38,7 +44,7 @@
     </div>
     <label class="f">Nominal (Rp)<input name="nominal" inputmode="numeric" placeholder="0" required autocomplete="off"></label>
     <label class="f">Keterangan<input name="ket" maxlength="120" placeholder="Contoh: Iuran Pak Ahmad angkatan 2015"></label>
-    <div class="act"><button type="button" class="btn soft" data-close>Batal</button><button class="btn green">Simpan</button></div>
+    <div class="act"><button type="button" class="btn soft" data-close>Batal</button><button class="btn lime">Simpan</button></div>
   </form>
 </dialog>
 
@@ -51,11 +57,40 @@
       <label class="f">Anggaran (opsional)<input name="anggaran" inputmode="numeric" placeholder="0" autocomplete="off"></label>
     </div>
     <label class="f">Catatan<input name="cat" maxlength="140" placeholder="Tempat, panitia, atau keterangan lain"></label>
-    <div class="act"><button type="button" class="btn soft" data-close>Batal</button><button class="btn green">Simpan event</button></div>
+    <div class="act"><button type="button" class="btn soft" data-close>Batal</button><button class="btn lime">Simpan event</button></div>
   </form>
 </dialog>
-<div id="toast" role="status"></div>
+
+<dialog id="dSet" class="wide">
+  <form id="fSet" method="dialog">
+    <h2>Pengaturan tampilan</h2>
+    <h3>Identitas</h3>
+    <label class="f">Nama aplikasi atau organisasi<input name="nama" maxlength="28" placeholder="HAPIA"></label>
+    <div class="two">
+      <label class="f">Subjudul<input name="tagline" maxlength="40" placeholder="Kas &amp; Keuangan"></label>
+      <label class="f">Nama pengguna<input name="user" maxlength="28" placeholder="Nama bendahara"></label>
+    </div>
+    <div class="logo-row"><span class="logo big"><img id="logoPrev" src="assets/logo.png" alt=""></span>
+      <div class="tools"><button type="button" class="btn soft sm" id="gantiLogo">Ganti logo</button><button type="button" class="btn soft sm" id="resetLogo">Logo bawaan</button></div></div>
+    <h3>Latar belakang</h3>
+    <div class="bgs" id="bgs">
+      <label><input type="radio" name="bg" value="padang"><span class="th" style="background:linear-gradient(180deg,#02080a 0 55%,#0d5a2a 100%)"></span><em>Padang malam</em><small>animasi</small></label>
+      <label><input type="radio" name="bg" value="senja"><span class="th" style="background:radial-gradient(80% 70% at 15% 0,#8d78ff,transparent),radial-gradient(70% 60% at 100% 100%,#ff9d7a,transparent),#0c0b18"></span><em>Senja ungu</em></label>
+      <label><input type="radio" name="bg" value="tengah"><span class="th" style="background:radial-gradient(90% 60% at 50% 0,#4b3fa8,transparent),#08080f"></span><em>Tengah malam</em></label>
+      <label><input type="radio" name="bg" value="zamrud"><span class="th" style="background:radial-gradient(70% 60% at 80% 0,#c9a60c,transparent),radial-gradient(80% 70% at 0 100%,#12a150,transparent),#031a10"></span><em>Zamrud</em></label>
+      <label><input type="radio" name="bg" value="foto"><span class="th" id="thFoto"></span><em>Foto sendiri</em></label>
+    </div>
+    <div id="fotoBox" hidden>
+      <button type="button" class="btn soft sm" id="pilihFoto">Pilih foto</button>
+      <label class="f" style="margin-top:12px">Gelapkan foto: <b id="gelapVal">35</b>%<input type="range" name="gelap" min="0" max="85" step="5"></label>
+    </div>
+    <div class="act"><button type="button" class="btn soft" id="resetSet">Kembalikan bawaan</button><button class="btn lime">Selesai</button></div>
+  </form>
+</dialog>
+<input type="file" id="fLogo" accept="image/*" hidden>
+<input type="file" id="fFoto" accept="image/*" hidden>
 <input type="file" id="berkas" accept="application/json" hidden>
+<div id="toast" role="status"></div>
 <script src="langit.js"></script>
 <script src="app.js"></script>
 </body>
