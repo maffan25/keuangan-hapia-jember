@@ -107,7 +107,7 @@ function panelKanan() {
     }).join('');
     const f = top[n - 1], fa = trxEv(f.id);
     stack = `<div class="stack" style="height:${(n - 1) * 34 + 132}px">${cards}</div>`;
-    glass = `<div class="fglass"><div class="fnum num">${rp(saldo(fa))}</div><div class="fmeta"><span>${esc(f.cat || 'Event terbaru')}</span><span>${fa.length} transaksi</span></div></div>`;
+    glass = `<a class="fglass" href="#/event/${f.id}"><div class="fnum num">${rp(saldo(fa))}</div><div class="fmeta"><span>${esc(f.cat || 'Event terbaru')}</span><span>${fa.length} transaksi</span></div></a>`;
   }
   const rows = L.slice(0, 5).map(e => { const a = trxEv(e.id); return `<a class="srow" href="#/event/${e.id}"><span class="evi" style="background:${grad(e)}">${esc((e.nama[0] || '?').toUpperCase())}</span><div class="t"><b>${esc(e.nama)}</b><small>${tgl(e.tgl)}</small></div><span class="n num">${rp(saldo(a))}</span>${DOTS}</a>`; });
   if (u.length) rows.push(`<a class="srow" href="#/event/umum"><span class="evi" style="background:${grad(null)}">K</span><div class="t"><b>Kas umum</b><small>${u.length} transaksi</small></div><span class="n num">${rp(saldo(u))}</span>${DOTS}</a>`);
@@ -175,6 +175,8 @@ function geserInd(animasi) {
   if (!indSiap) { void ind.offsetWidth; indSiap = true; ind.style.transition = ''; }
 }
 addEventListener('resize', () => geserInd(false));
+let sy0 = scrollY;
+addEventListener('scroll', () => { const y = scrollY, f = $('#tambah'); if (!f) return; if (y - sy0 > 8 && y > 120) f.classList.add('sembunyi'); else if (sy0 - y > 8 || y < 120) f.classList.remove('sembunyi'); sy0 = y; }, { passive: true });
 addEventListener('load', () => geserInd(false));
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => geserInd(false));
 document.addEventListener('pointerdown', e => {
@@ -187,7 +189,7 @@ document.addEventListener('pointerdown', e => {
 }, { passive: true });
 function hitung(root) {
   if (REDUCE) return;
-  const t0 = performance.now(), D = 900, items = [];
+  const t0 = performance.now(), D = 650, items = [];
   root.querySelectorAll('.big, .stat .sv, .fnum').forEach(el => {
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     let n; while ((n = w.nextNode())) { const m = n.nodeValue.match(/\d[\d.]*/); if (m) { items.push({ n, awal: n.nodeValue, m: m[0], v: +m[0].replace(/\./g, '') }); break; } }
