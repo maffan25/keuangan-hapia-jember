@@ -67,7 +67,7 @@ const PANAH = '<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 
 const trow = (t, aksi, showEv = true) => `<div class="tr ${t.jenis === 'keluar' ? 'k' : ''}"><span class="ic">${IK[t.jenis]}</span><div class="tn"><b>${esc(t.ket || t.kat)}</b><small>${esc(t.kat)}${showEv ? ' · ' + esc(namaEv(t.ev)) : ''}</small></div><span class="st ${t.jenis}">${t.jenis === 'masuk' ? 'Masuk' : 'Keluar'}</span><span class="td">${tgl(t.tgl)}</span><b class="ta num">${t.jenis === 'keluar' ? '−' : '+'}${rp(t.nominal)}</b><span class="tx">${aksi ? `<button class="ib" data-a="edit" data-id="${t.id}" aria-label="Ubah">${EDIT}</button><button class="ib del" data-a="del" data-id="${t.id}" aria-label="Hapus">${DEL}</button>` : DOTS}</span></div>`;
 
-const hero = (lbl, a, sub, tombol) => { const m = sum(a, 'masuk'), k = sum(a, 'keluar'); return `<section class="hero2"><div class="lbl">${lbl}</div><div class="big num">${big(m - k)}</div><p class="s2">${sub}</p><div class="hbtn">${tombol}</div></section>`; };
+const hero = (lbl, a, sub, tombol) => { const m = sum(a, 'masuk'), k = sum(a, 'keluar'); return `<section class="hero2"><i class="sheen"></i><div class="lbl">${lbl}</div><div class="big num">${big(m - k)}</div><p class="s2">${sub}</p><div class="hbtn">${tombol}</div></section>`; };
 const stat = (judul, nilai, tanda, sub, chip, cls = '') => `<div class="card stat ${cls}"><h3>${judul}</h3><div class="sv num">${nilai ? tanda : ''}${big(nilai)}</div><div class="ft"><span>${sub}</span>${chip}</div></div>`;
 
 function donat(items, pusat) {
@@ -160,15 +160,134 @@ const isiLst = () => { const a = filt(); $('#lst').innerHTML = a.length ? a.map(
 
 let lapB = bulanIni();
 const vLaporan = () => `<div class="head2"><h1>Laporan</h1><p class="sub">Rekap bulanan, ekspor data, cadangan, dan tampilan</p></div><div class="r2"><div class="card"><div class="card-h"><h2>Rekap bulanan</h2><input type="month" id="lb" value="${lapB}"></div><div id="rekap"></div></div>
-  <div class="card"><div class="card-h"><h2>Data &amp; tampilan</h2></div><p class="sub" style="margin-bottom:16px">Data tersimpan di peramban perangkat ini. Unduh cadangan secara berkala dan simpan di tempat aman.</p><div class="actions"><button class="btn soft sm" data-a="pengaturan">Ubah nama &amp; latar</button><button class="btn soft sm" data-a="csv">Unduh CSV</button><button class="btn soft sm" data-a="cetak">Cetak laporan</button><button class="btn soft sm" data-a="backup">Unduh cadangan</button><button class="btn soft sm" data-a="restore">Pulihkan cadangan</button><button class="btn red sm" data-a="reset">Hapus semua data</button></div></div></div>`;
+  <div class="card"><div class="card-h"><h2>Data &amp; tampilan</h2></div><p class="sub" style="margin-bottom:16px">Data tersimpan di peramban perangkat ini. Unduh cadangan secara berkala dan simpan di tempat aman.</p><div class="actions"><button class="btn soft sm" data-a="pengaturan">Ubah nama &amp; latar</button><button class="btn soft sm" data-a="csv">Unduh CSV</button><button class="btn soft sm" data-a="cetak">Cetak laporan bulan ini</button><button class="btn soft sm" data-a="cetak-all">Cetak semua periode</button><button class="btn soft sm" data-a="backup">Unduh cadangan</button><button class="btn soft sm" data-a="restore">Pulihkan cadangan</button><button class="btn red sm" data-a="reset">Hapus semua data</button></div></div></div>`;
 const isiRekap = () => { const a = trxB(lapB), m = sum(a, 'masuk'), k = sum(a, 'keluar'); $('#rekap').innerHTML = a.length ? `<div class="two" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:18px"><div><span class="sub">Masuk</span><b class="num" style="display:block;color:var(--lime)">${rp(m)}</b></div><div><span class="sub">Keluar</span><b class="num" style="display:block;color:var(--coral)">${rp(k)}</b></div><div><span class="sub">Selisih</span><b class="num" style="display:block">${rp(m - k)}</b></div></div><h3>Pemasukan</h3>${hbar(byKat(a, 'masuk'), '#c9f35c')}<h3>Pengeluaran</h3>${hbar(byKat(a, 'keluar'), '#f2765f')}` : `<div class="empty"><b>Tidak ada data</b>Belum ada transaksi di ${blnP(lapB)}.</div>`; };
 
+/* Gerak: indikator menu, riak klik, hitung angka */
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let indSiap = false;
+function geserInd(animasi) {
+  const nav = $('#nav'), ind = nav && nav.querySelector('.ind'), on = nav && nav.querySelector('a.on');
+  if (!ind) return;
+  if (!on) { ind.style.opacity = 0; return; }
+  if (!animasi || !indSiap) ind.style.transition = 'none'; else ind.style.transition = '';
+  ind.style.opacity = 1; ind.style.width = on.offsetWidth + 'px'; ind.style.transform = 'translateX(' + on.offsetLeft + 'px)';
+  if (!indSiap) { void ind.offsetWidth; indSiap = true; ind.style.transition = ''; }
+}
+addEventListener('resize', () => geserInd(false));
+addEventListener('load', () => geserInd(false));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => geserInd(false));
+document.addEventListener('pointerdown', e => {
+  if (REDUCE) return;
+  const b = e.target.closest('.pill,.btn,.sel,.arrow,.addp,.circ,.ava,.fab,.pills a,.tabs button,.link,.srow,.evc,.sc,.seg span');
+  if (!b) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, x = document.createElement('span');
+  x.className = 'rpl'; x.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  b.appendChild(x); x.addEventListener('animationend', () => x.remove());
+}, { passive: true });
+function hitung(root) {
+  if (REDUCE) return;
+  const t0 = performance.now(), D = 900, items = [];
+  root.querySelectorAll('.big, .stat .sv, .fnum').forEach(el => {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n; while ((n = w.nextNode())) { const m = n.nodeValue.match(/\d[\d.]*/); if (m) { items.push({ n, awal: n.nodeValue, m: m[0], v: +m[0].replace(/\./g, '') }); break; } }
+  });
+  if (!items.length) return;
+  const f = now => {
+    const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 4);
+    items.forEach(i => { i.n.nodeValue = k >= 1 ? i.awal : i.awal.replace(i.m, Math.round(i.v * e).toLocaleString('id-ID')); });
+    if (k < 1) requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+}
+
+/* Laporan cetak */
+const nf = n => Math.round(n).toLocaleString('id-ID');
+const tg2 = s => s.split('-').reverse().join('/');
+function donatCetak(items) {
+  const T = items.reduce((s, x) => s + x[1], 0);
+  if (!T) return '<div class="pr-empty">Belum ada data</div>';
+  const r = 50, C = 2 * Math.PI * r; let off = 0, c = '', lg = '';
+  items.forEach(([n, v], i) => {
+    const w = PAL[i % PAL.length], seg = v / T * C;
+    c += `<circle cx="70" cy="70" r="${r}" fill="none" stroke="${w}" stroke-width="22" stroke-dasharray="${Math.max(seg - 1.6, .5)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;
+    off += seg;
+    lg += `<tr><td><i style="background:${w}"></i>${esc(n)}</td><td class="r">${rp(v)}</td><td class="r"><b>${Math.round(v / T * 100)}%</b></td></tr>`;
+  });
+  return `<div class="pr-donut"><svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="61" fill="none" stroke="#eef0f7" stroke-width="1"/>${c}<text x="70" y="66" text-anchor="middle" font-size="8" fill="#7a7d99" font-weight="600">Total keluar</text><text x="70" y="82" text-anchor="middle" font-size="15" font-weight="800" fill="#151629">${kc(T)}</text></svg><table class="pr-lg">${lg}</table></div>`;
+}
+function trenCetak(akhir) {
+  const ms = [akhir]; for (let i = 0; i < 5; i++) ms.unshift(prevM(ms[0]));
+  const vm = ms.map(m => sum(trxB(m), 'masuk')), vk = ms.map(m => sum(trxB(m), 'keluar')), mx = Math.max(1, ...vm, ...vk);
+  const W = 560, H = 190, top = 22, bot = 26, ch = H - top - bot, gw = W / 6;
+  let g = '', bars = '';
+  [0, .5, 1].forEach(f => { const y = top + ch * (1 - f); g += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#e3e6f1" stroke-dasharray="3 4"/>`; });
+  ms.forEach((m, i) => {
+    const x0 = i * gw + gw / 2 - 29, hm = vm[i] / mx * ch, hk = vk[i] / mx * ch, cur = i === 5;
+    bars += `<rect x="${x0}" y="${top + ch - hm}" width="26" height="${Math.max(hm, 1.5)}" rx="6" fill="url(#gM)"/><rect x="${x0 + 32}" y="${top + ch - hk}" width="26" height="${Math.max(hk, 1.5)}" rx="6" fill="url(#gK)"/>`;
+    if (vm[i]) bars += `<text x="${x0 + 13}" y="${top + ch - hm - 5}" text-anchor="middle" font-size="8" font-weight="700" fill="#0f8f6b">${kc(vm[i])}</text>`;
+    if (vk[i]) bars += `<text x="${x0 + 45}" y="${top + ch - hk - 5}" text-anchor="middle" font-size="8" font-weight="700" fill="#d2543e">${kc(vk[i])}</text>`;
+    bars += `<text x="${i * gw + gw / 2}" y="${H - 8}" text-anchor="middle" font-size="9.5" font-weight="${cur ? 800 : 600}" fill="${cur ? '#151629' : '#7a7d99'}">${bln(m)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="pr-trend"><defs><linearGradient id="gM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ddfb0"/><stop offset="1" stop-color="#14a37c"/></linearGradient><linearGradient id="gK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a7d"/><stop offset="1" stop-color="#e65a45"/></linearGradient></defs>${g}${bars}</svg>`;
+}
+function hbarCetak(items, kelas) {
+  if (!items.length) return '<div class="pr-empty">Belum ada data</div>';
+  return items.map(([n, v]) => `<div class="pr-hb"><div class="l"><span>${esc(n)}</span><b>${rp(v)}</b></div><div class="t"><i class="${kelas}" style="width:${Math.max(3, v / items[0][1] * 100)}%"></i></div></div>`).join('');
+}
+function susunLaporan(ym) {
+  const asc = urut(db.trx).reverse(), rows = ym ? asc.filter(t => t.tgl.startsWith(ym)) : asc;
+  const sebelum = ym ? asc.filter(t => t.tgl < ym + '-01') : [];
+  const awal = sum(sebelum, 'masuk') - sum(sebelum, 'keluar'), m = sum(rows, 'masuk'), k = sum(rows, 'keluar'), akhir = awal + m - k;
+  const periode = ym ? blnP(ym) : rows.length ? tgl(rows[0].tgl) + ' – ' + tgl(rows[rows.length - 1].tgl) : 'Seluruh periode';
+  const judul = ym ? 'Laporan Kas Bulanan' : 'Laporan Kas Seluruh Periode';
+  const bm = byKat(rows, 'masuk'), bk = byKat(rows, 'keluar');
+  const now = new Date(), cetakTgl = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }), jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+  const noDok = 'KAS/' + (ym ? ym.replace('-', '/') : 'ALL/' + now.getFullYear()) + '/' + String(rows.length).padStart(3, '0');
+  const pm = ym ? pct(m, sum(trxB(prevM(ym)), 'masuk')) : null, pk = ym ? pct(k, sum(trxB(prevM(ym)), 'keluar')) : null;
+  const dlt = (x, naikBaik) => x === null ? '' : `<em class="${(x >= 0) === naikBaik ? 'up' : 'dn'}">${x >= 0 ? '▲' : '▼'} ${Math.abs(x)}% dari bulan lalu</em>`;
+  const narasi = !rows.length ? 'Belum ada transaksi yang tercatat pada periode ini.' :
+    `Pada ${periode}, kas mencatat pemasukan sebesar <b>${rp(m)}</b>${bm.length ? ` (terbesar dari ${esc(bm[0][0])}, ${Math.round(bm[0][1] / m * 100)}%)` : ''} dan pengeluaran sebesar <b>${rp(k)}</b>${bk.length ? ` (terbesar untuk ${esc(bk[0][0])}, ${Math.round(bk[0][1] / k * 100)}%)` : ''}. Saldo akhir periode adalah <b>${rp(akhir)}</b>${m - k >= 0 ? ', surplus' : ', defisit'} ${rp(Math.abs(m - k))} dibanding awal periode.`;
+  const grp = {}; rows.forEach(t => { const id = t.ev ?? 'u'; (grp[id] = grp[id] || []).push(t); });
+  const evRows = Object.entries(grp).map(([id, a]) => ({ n: id === 'u' ? 'Kas umum' : namaEv(+id), c: a.length, m: sum(a, 'masuk'), k: sum(a, 'keluar') })).sort((x, y) => y.m - x.m)
+    .map(e => `<tr><td>${esc(e.n)}</td><td class="c">${e.c}</td><td class="r g">${nf(e.m)}</td><td class="r o">${nf(e.k)}</td><td class="r"><b>${e.m - e.k < 0 ? '−' : ''}${nf(Math.abs(e.m - e.k))}</b></td></tr>`).join('');
+  let run = awal;
+  const trs = rows.map((t, i) => { run += t.jenis === 'masuk' ? t.nominal : -t.nominal; return `<tr><td class="c">${i + 1}</td><td>${tg2(t.tgl)}</td><td>${esc(namaEv(t.ev))}</td><td>${esc(t.kat)}</td><td>${esc(t.ket || '–')}</td><td class="r g">${t.jenis === 'masuk' ? nf(t.nominal) : ''}</td><td class="r o">${t.jenis === 'keluar' ? nf(t.nominal) : ''}</td><td class="r">${run < 0 ? '−' : ''}${nf(Math.abs(run))}</td></tr>`; }).join('');
+  const logo = S.logo || 'assets/logo.png';
+  return `<div class="pr-foot"><span>${esc(S.nama || 'Kas')} · ${judul} · ${esc(periode)}</span><span>${noDok}</span></div>
+  <header class="pr-head"><div class="pr-brand"><span class="pr-logo"><img src="${logo}" alt=""></span><div><b>${esc(S.nama || 'Kas')}</b><small>${esc(S.tagline || '')}</small></div></div>
+    <div class="pr-title"><small>${judul.toUpperCase()}</small><h1>${esc(periode)}</h1></div>
+    <dl class="pr-meta"><div><dt>No. dokumen</dt><dd>${noDok}</dd></div><div><dt>Dicetak</dt><dd>${cetakTgl}, ${jam}</dd></div><div><dt>Transaksi</dt><dd>${rows.length} catatan</dd></div></dl></header>
+  <section class="pr-kpi">
+    <div class="k k0"><span>Saldo awal</span><b>${rp(awal)}</b><em>${ym ? 'Per 1 ' + blnP(ym) : 'Awal pencatatan'}</em></div>
+    <div class="k k1"><span>Total pemasukan</span><b>${rp(m)}</b>${dlt(pm, true)}</div>
+    <div class="k k2"><span>Total pengeluaran</span><b>${rp(k)}</b>${dlt(pk, false)}</div>
+    <div class="k k3"><span>Saldo akhir</span><b>${rp(akhir)}</b><em>${m - k >= 0 ? '▲ Surplus ' : '▼ Defisit '}${rp(Math.abs(m - k))}</em></div></section>
+  <p class="pr-note">${narasi}</p>
+  <section class="pr-grid"><div class="pr-box"><h2>Tren 6 bulan <span><i class="lg1"></i>Masuk <i class="lg2"></i>Keluar</span></h2>${trenCetak(ym || bulanIni())}</div>
+    <div class="pr-box"><h2>Komposisi pengeluaran</h2>${donatCetak(bk)}</div></section>
+  <section class="pr-grid"><div class="pr-box"><h2>Sumber pemasukan</h2>${hbarCetak(bm, 'gi')}</div><div class="pr-box"><h2>Pengeluaran per kategori</h2>${hbarCetak(bk, 'go')}</div></section>
+  ${evRows ? `<section class="pr-box wide"><h2>Rekap per event</h2><table class="pr-tb"><thead><tr><th>Event</th><th class="c">Transaksi</th><th class="r">Pemasukan (Rp)</th><th class="r">Pengeluaran (Rp)</th><th class="r">Saldo (Rp)</th></tr></thead><tbody>${evRows}</tbody></table></section>` : ''}
+  <section class="pr-box wide"><h2>Rincian transaksi</h2><table class="pr-tb det"><thead><tr><th class="c">No</th><th>Tanggal</th><th>Event</th><th>Kategori</th><th>Keterangan</th><th class="r">Masuk (Rp)</th><th class="r">Keluar (Rp)</th><th class="r">Saldo (Rp)</th></tr></thead><tbody>
+    ${ym ? `<tr class="aw"><td></td><td colspan="4">Saldo awal periode</td><td></td><td></td><td class="r">${awal < 0 ? '−' : ''}${nf(Math.abs(awal))}</td></tr>` : ''}${trs || '<tr><td colspan="8" class="c pr-empty">Tidak ada transaksi</td></tr>'}</tbody>
+    <tfoot><tr><td colspan="5">Total periode</td><td class="r">${nf(m)}</td><td class="r">${nf(k)}</td><td class="r">${akhir < 0 ? '−' : ''}${nf(Math.abs(akhir))}</td></tr></tfoot></table></section>
+  <section class="pr-sign"><div><p>Mengetahui,</p><b>Ketua</b><span></span><small>Nama &amp; tanda tangan</small></div><div><p>Disusun oleh,</p><b>Bendahara</b><span></span><small>Nama &amp; tanda tangan</small></div></section>`;
+}
+function cetak(ym) {
+  $('#cetak').innerHTML = susunLaporan(ym);
+  const lama = document.title; document.title = 'Laporan Kas ' + (ym ? blnP(ym) : 'Seluruh Periode') + ' - ' + (S.nama || 'Kas');
+  const im = [...$('#cetak').querySelectorAll('img')];
+  Promise.all(im.map(i => i.decode ? i.decode().catch(() => {}) : 0)).then(() => setTimeout(() => { print(); document.title = lama; }, 60));
+}
+
 /* Router */
-function render() {
+function render(quiet) {
   const [, r = 'beranda', p] = location.hash.replace('#', '').split('/');
   document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === r));
   const root = $('#root'); root.innerHTML = r === 'event' ? (p ? vDetail(p) : vEvent()) : r === 'transaksi' ? vTrx() : r === 'laporan' ? vLaporan() : vBeranda();
+  root.classList.toggle('quiet', quiet === true);
   root.style.animation = 'none'; void root.offsetWidth; root.style.animation = '';
+  geserInd(true); if (quiet !== true) hitung(root);
   if (r === 'transaksi') { $('#fj').value = F.j; $('#fe').value = F.e; isiLst(); }
   if (r === 'laporan') isiRekap();
 }
@@ -254,11 +373,12 @@ $('#root').addEventListener('click', e => {
   else if (a === 'evt-baru') bukaEvt();
   else if (a === 'evt-ubah') bukaEvt(id);
   else if (a === 'evt-hapus') { if (confirm('Hapus event ini? Transaksinya dipindahkan ke Kas umum.')) { db.trx.forEach(t => { if (t.ev === id) t.ev = null; }); db.events = db.events.filter(x => x.id !== id); simpan(); location.hash = '#/event'; render(); toast('Event dihapus'); } }
-  else if (a === 'tab') { tab = b.dataset.t; render(); }
-  else if (a === 'serie') { serie = serie === 'masuk' ? 'keluar' : 'masuk'; render(); }
-  else if (a === 'donutp') { donutP = donutP === 'bulan' ? 'semua' : 'bulan'; render(); }
+  else if (a === 'tab') { tab = b.dataset.t; render(true); }
+  else if (a === 'serie') { serie = serie === 'masuk' ? 'keluar' : 'masuk'; render(true); }
+  else if (a === 'donutp') { donutP = donutP === 'bulan' ? 'semua' : 'bulan'; render(true); }
   else if (a === 'pengaturan') bukaSet();
-  else if (a === 'cetak') print();
+  else if (a === 'cetak') cetak(lapB);
+  else if (a === 'cetak-all') cetak(null);
   else if (a === 'backup') unduh('cadangan-kas-' + hariIni() + '.json', JSON.stringify({ v: 3, ...db, set: S }), 'application/json');
   else if (a === 'restore') $('#berkas').click();
   else if (a === 'csv') {
