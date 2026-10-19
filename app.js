@@ -4,8 +4,8 @@ const KEY = 'hapia-kas-v2', KEY1 = 'hapia-kas-v1', KS = 'hapia-kas-set';
 const KM = ['Iuran', 'Donasi', 'Sponsor', 'Penjualan', 'Saldo awal', 'Lainnya'];
 const KK = ['Konsumsi', 'Perlengkapan', 'Transportasi', 'Dokumentasi', 'Honor & hadiah', 'Sewa tempat', 'Lainnya'];
 const PAL = ['#f6cf4a', '#f2765f', '#b7a4ff', '#62b4ff', '#7fe3b0', '#e58bd0', '#c9f35c'];
-const GR = [['#ffb08a', '#f27b62'], ['#8be3c9', '#62b8ee'], ['#c4b0ff', '#8f7cf0'], ['#f6e27a', '#f0b84a'], ['#a7ea82', '#4fc39a']];
-const DEF = { nama: 'HAPIA', tagline: 'Kas & Keuangan', user: 'Pengurus', logo: null, bg: 'padang', foto: null, gelap: 35 };
+const GR = [['#ffb27d', '#f2765f'], ['#8be3c9', '#f6e27a', '#f4a6cf'], ['#c9b8ff', '#8f7cf0'], ['#f6e27a', '#f0b84a'], ['#a7ea82', '#4fc39a']];
+const DEF = { nama: 'HAPIA', tagline: 'Kas & Keuangan', user: 'Pengurus', logo: null, bg: 'ethereal', foto: null, gelap: 35, v: 2 };
 const $ = (s, r = document) => r.querySelector(s);
 const rp = n => (n < 0 ? '−' : '') + 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,6 +28,7 @@ try {
 } catch { /* mulai kosong */ }
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem(KS)) || {}); } catch { /* bawaan */ }
+if (S.v !== 2) { S.v = 2; if (S.bg === 'padang') S.bg = 'ethereal'; try { localStorage.setItem(KS, JSON.stringify(S)); } catch { /* abaikan */ } }
 const simpan = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { toast('Penyimpanan peramban diblokir atau penuh'); } };
 const simpanS = () => { try { localStorage.setItem(KS, JSON.stringify(S)); } catch { toast('Gambar terlalu besar untuk disimpan, coba yang lebih kecil'); } };
 
@@ -38,13 +39,13 @@ const trxEv = id => db.trx.filter(t => (t.ev ?? null) === id);
 const trxB = ym => db.trx.filter(t => t.tgl.startsWith(ym));
 const evList = () => [...db.events].sort((a, b) => b.tgl.localeCompare(a.tgl));
 const namaEv = id => id == null ? 'Kas umum' : (db.events.find(e => e.id === id) || {}).nama || 'Kas umum';
-const grad = e => { const i = e ? Math.max(0, db.events.indexOf(e)) % GR.length : 2, g = GR[i]; return `linear-gradient(135deg,${g[0]},${g[1]})`; };
+const grad = e => { const i = e ? Math.max(0, db.events.indexOf(e)) % GR.length : 2; return `linear-gradient(135deg,${GR[i].join(',')})`; };
 const pct = (c, p) => p > 0 ? Math.round((c - p) / p * 100) : null;
 const chipP = (c, p, naikBaik) => { if (!c && !p) return ''; const x = pct(c, p); return x === null ? '<span class="chip">baru</span>' : `<span class="chip ${(x >= 0) === naikBaik ? 'lime' : 'red'}">${x >= 0 ? '+' : ''}${x}%</span>`; };
 
 /* Terapkan nama dan latar */
 function terapkan() {
-  let bg = S.bg; if (bg === 'foto' && !S.foto) bg = 'tengah';
+  let bg = S.bg; if (bg === 'foto' && !S.foto) bg = 'ethereal';
   const b = document.body; b.dataset.bg = bg;
   if (S.foto) b.style.setProperty('--foto', 'url("' + S.foto + '")');
   b.style.setProperty('--gelap', S.gelap / 100);
@@ -60,24 +61,26 @@ function terapkan() {
 const IK = { masuk: '<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>', keluar: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 9v8H9"/></svg>' };
 const EDIT = '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>';
 const DEL = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+const PLUS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+const DOTS = '<svg viewBox="0 0 24 24" class="dots"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>';
 const PANAH = '<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 
-const trow = (t, aksi, showEv = true) => `<div class="tr ${t.jenis === 'keluar' ? 'k' : ''}"><span class="ic">${IK[t.jenis]}</span><div class="tn"><b>${esc(t.ket || t.kat)}</b><small>${esc(t.kat)}${showEv ? ' · ' + esc(namaEv(t.ev)) : ''}</small></div><span class="st ${t.jenis}">${t.jenis === 'masuk' ? 'Masuk' : 'Keluar'}</span><span class="td">${tgl(t.tgl)}</span><b class="ta num">${t.jenis === 'keluar' ? '−' : '+'}${rp(t.nominal)}</b><span class="tx">${aksi ? `<button class="ib" data-a="edit" data-id="${t.id}" aria-label="Ubah">${EDIT}</button><button class="ib del" data-a="del" data-id="${t.id}" aria-label="Hapus">${DEL}</button>` : ''}</span></div>`;
+const trow = (t, aksi, showEv = true) => `<div class="tr ${t.jenis === 'keluar' ? 'k' : ''}"><span class="ic">${IK[t.jenis]}</span><div class="tn"><b>${esc(t.ket || t.kat)}</b><small>${esc(t.kat)}${showEv ? ' · ' + esc(namaEv(t.ev)) : ''}</small></div><span class="st ${t.jenis}">${t.jenis === 'masuk' ? 'Masuk' : 'Keluar'}</span><span class="td">${tgl(t.tgl)}</span><b class="ta num">${t.jenis === 'keluar' ? '−' : '+'}${rp(t.nominal)}</b><span class="tx">${aksi ? `<button class="ib" data-a="edit" data-id="${t.id}" aria-label="Ubah">${EDIT}</button><button class="ib del" data-a="del" data-id="${t.id}" aria-label="Hapus">${DEL}</button>` : DOTS}</span></div>`;
 
 const hero = (lbl, a, sub, tombol) => { const m = sum(a, 'masuk'), k = sum(a, 'keluar'); return `<section class="hero2"><div class="lbl">${lbl}</div><div class="big num">${big(m - k)}</div><p class="s2">${sub}</p><div class="hbtn">${tombol}</div></section>`; };
-const stat = (judul, nilai, tanda, sub, chip) => `<div class="card stat"><h3>${judul}</h3><div class="sv num">${nilai ? tanda : ''}${big(nilai)}</div><div class="ft"><span>${sub}</span>${chip}</div></div>`;
+const stat = (judul, nilai, tanda, sub, chip, cls = '') => `<div class="card stat ${cls}"><h3>${judul}</h3><div class="sv num">${nilai ? tanda : ''}${big(nilai)}</div><div class="ft"><span>${sub}</span>${chip}</div></div>`;
 
 function donat(items, pusat) {
   const T = items.reduce((s, x) => s + x[1], 0);
   if (!T) return '<div class="empty">Belum ada data</div>';
-  const r = 58, C = 2 * Math.PI * r, sw = 15, multi = items.length > 1; let off = 0, c = '', lg = '';
+  const r = 56, C = 2 * Math.PI * r, sw = 17, multi = items.length > 1; let off = 0, c = '', lg = '';
   items.forEach(([n, v], i) => {
-    const w = PAL[i % PAL.length], seg = v / T * C, len = Math.max(multi ? seg - sw - 5 : seg, .5);
-    c += `<circle cx="75" cy="75" r="${r}" fill="none" stroke="${w}" stroke-width="${sw}" stroke-linecap="${multi ? 'round' : 'butt'}" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-(off + (multi ? sw / 2 + 2.5 : 0))}" transform="rotate(-90 75 75)"><title>${esc(n)}: ${rp(v)}</title></circle>`;
+    const w = PAL[i % PAL.length], seg = v / T * C, len = Math.max(multi ? seg - sw - 6 : seg, .5);
+    c += `<circle cx="75" cy="75" r="${r}" fill="none" stroke="${w}" stroke-width="${sw}" stroke-linecap="${multi ? 'round' : 'butt'}" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-(off + (multi ? sw / 2 + 3 : 0))}" transform="rotate(-90 75 75)"><title>${esc(n)}: ${rp(v)}</title></circle>`;
     off += seg;
     if (i < 6) lg += `<div class="lg"><i style="background:${w}"></i><span>${esc(n)}</span><b>${Math.round(v / T * 100)}%</b></div>`;
   });
-  return `<div class="donut"><svg class="d" viewBox="0 0 150 150" role="img" aria-label="Komposisi">${c}<text x="75" y="70" text-anchor="middle" font-size="10" font-weight="700" fill="#9696ad">${pusat}</text><text x="75" y="90" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">${kc(T)}</text></svg><div class="legend">${lg}</div></div>`;
+  return `<div class="donut"><svg class="d" viewBox="0 0 150 150" role="img" aria-label="Komposisi">${c}<text x="75" y="68" text-anchor="middle" font-size="10" font-weight="600" fill="#a9a9c4">${pusat}</text><text x="75" y="89" text-anchor="middle" font-size="19" font-weight="700" fill="#fff" letter-spacing="-.5">${kc(T)}</text></svg><div class="legend">${lg}</div></div>`;
 }
 const hbar = (items, w) => items.length ? items.map(([n, v]) => `<div class="hb"><div><span>${esc(n)}</span><span class="num">${rp(v)}</span></div><div class="t"><i style="width:${v / items[0][1] * 100}%;background:${w}"></i></div></div>`).join('') : '<div class="empty">Belum ada data</div>';
 
@@ -86,24 +89,31 @@ function arus() {
   const b = [], d = new Date();
   for (let i = 4; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); b.push(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')); }
   const v = b.map(m => sum(trxB(m), serie)), mx = Math.max(1, ...v);
-  const cols = b.map((m, i) => { const h = v[i] ? Math.max(16, v[i] / mx * 100) : 7, on = i === 4; return `<div class="bcol ${on ? 'on' : ''}"><div class="area"><div class="b" style="height:${h}%">${on ? `<div class="tip">${rp(v[i])}${chipP(v[i], v[3], serie === 'masuk')}</div>` : ''}${v[i] ? (serie === 'masuk' ? '+' : '−') + kc(v[i]) : ''}</div></div><small>${bln(m)}</small></div>`; }).join('');
-  return `<div class="card-h"><h2>Arus kas</h2><button class="sel" data-a="serie">${serie === 'masuk' ? 'Pemasukan' : 'Pengeluaran'} ▾</button></div><div class="bars">${cols}</div>`;
+  const cols = b.map((m, i) => { const h = v[i] ? Math.max(16, v[i] / mx * 100) : 7, on = i === 4; return `<div class="bcol ${on ? 'on' : ''}"><div class="area"><div class="b" style="height:${h}%">${on ? `<div class="tip"><i class="ti">${serie === 'masuk' ? '↗' : '↘'}</i>${rp(v[i])}${chipP(v[i], v[3], serie === 'masuk')}</div><i class="ring"></i>` : ''}${v[i] ? (serie === 'masuk' ? '+' : '−') + kc(v[i]) : ''}</div></div><small>${bln(m)}</small></div>`; }).join('');
+  return `<div class="card-h"><h2>Arus kas</h2><div class="hd-r"><button class="sel" data-a="serie">${serie === 'masuk' ? 'Pemasukan' : 'Pengeluaran'} ▾</button><button class="arrow" data-go="laporan" aria-label="Buka laporan">${PANAH}</button></div></div><div class="bars">${cols}</div>`;
 }
 function donutKartu() {
   const a = donutP === 'bulan' ? trxB(bulanIni()) : db.trx;
   return `<div class="card-h"><h2>Pembagian pengeluaran</h2><button class="sel" data-a="donutp">${donutP === 'bulan' ? 'Bulan ini' : 'Semua'} ▾</button></div>${donat(byKat(a, 'keluar'), 'Total keluar')}`;
 }
-function tumpukan() {
-  const top = evList().slice(0, 3).reverse(), n = top.length;
-  if (!n) return '<div class="stack"><button class="sc kosong" data-a="evt-baru">+ Buat event pertama</button></div>';
-  const cards = top.map((e, i) => { const a = trxEv(e.id), s = sum(a, 'masuk') - sum(a, 'keluar'), inset = (n - 1 - i) * 11; return `<a class="sc" href="#/event/${e.id}" style="top:${i * 31}px;left:${inset}px;right:${inset}px;background:${grad(e)}"><div><div class="n1">${esc(e.nama)}</div><div class="n2">${tgl(e.tgl)}</div></div><div class="sv num">${rp(s)}</div></a>`; }).join('');
-  return `<div class="stack" style="height:${150 + (n - 1) * 31 + 6}px">${cards}</div>`;
-}
-function daftarEvent() {
-  const rows = evList().slice(0, 5).map(e => { const a = trxEv(e.id), s = sum(a, 'masuk') - sum(a, 'keluar'); return `<a class="evrow" href="#/event/${e.id}"><span class="evi" style="background:${grad(e)}">${esc((e.nama[0] || '?').toUpperCase())}</span><div class="t"><b>${esc(e.nama)}</b><small>${tgl(e.tgl)} · ${a.length} transaksi</small></div><span class="n num">${rp(s)}</span></a>`; });
-  const u = trxEv(null);
-  if (u.length) rows.push(`<a class="evrow" href="#/event/umum"><span class="evi" style="background:${grad(null)}">K</span><div class="t"><b>Kas umum</b><small>${u.length} transaksi</small></div><span class="n num">${rp(sum(u, 'masuk') - sum(u, 'keluar'))}</span></a>`);
-  return rows.length ? rows.join('') : '<div class="empty"><b>Belum ada event</b>Kelompokkan pemasukan dan pengeluaran per event.</div>';
+function panelKanan() {
+  const L = evList(), top = L.slice(0, 3).reverse(), n = top.length, u = trxEv(null);
+  const saldo = a => sum(a, 'masuk') - sum(a, 'keluar');
+  let stack = '<div class="stack kosongwrap"><button class="sc kosong" data-a="evt-baru">+ Buat event pertama</button></div>', glass = '';
+  if (n) {
+    const cards = top.map((e, i) => {
+      const front = i === n - 1, inset = (n - 1 - i) * 14;
+      return `<a class="sc ${front ? 'front' : ''}" href="#/event/${e.id}" style="top:${i * 34}px;left:${inset}px;right:${inset}px;background:${grad(e)};z-index:${i + 1}"><span class="n1">${esc(e.nama)}</span><span class="n2">${front ? tgl(e.tgl) : kc(saldo(trxEv(e.id)))}</span></a>`;
+    }).join('');
+    const f = top[n - 1], fa = trxEv(f.id);
+    stack = `<div class="stack" style="height:${(n - 1) * 34 + 132}px">${cards}</div>`;
+    glass = `<div class="fglass"><div class="fnum num">${rp(saldo(fa))}</div><div class="fmeta"><span>${esc(f.cat || 'Event terbaru')}</span><span>${fa.length} transaksi</span></div></div>`;
+  }
+  const rows = L.slice(0, 5).map(e => { const a = trxEv(e.id); return `<a class="srow" href="#/event/${e.id}"><span class="evi" style="background:${grad(e)}">${esc((e.nama[0] || '?').toUpperCase())}</span><div class="t"><b>${esc(e.nama)}</b><small>${tgl(e.tgl)}</small></div><span class="n num">${rp(saldo(a))}</span>${DOTS}</a>`; });
+  if (u.length) rows.push(`<a class="srow" href="#/event/umum"><span class="evi" style="background:${grad(null)}">K</span><div class="t"><b>Kas umum</b><small>${u.length} transaksi</small></div><span class="n num">${rp(saldo(u))}</span>${DOTS}</a>`);
+  const av = L.slice(0, 6).map(e => `<a class="evi" href="#/event/${e.id}" style="background:${grad(e)}" aria-label="${esc(e.nama)}">${esc((e.nama[0] || '?').toUpperCase())}</a>`).join('');
+  return `<div class="card-h"><h2>Event saya<sup>${db.events.length}</sup></h2><button class="addp" data-a="evt-baru">Tambah <span>${PLUS}</span></button></div>${stack}
+  <div class="glass ${n ? '' : 'flat'}">${glass}<div class="card-h sh"><h2>Daftar event<sup>${L.length + (u.length ? 1 : 0)}</sup></h2><button class="link" data-go="event">Kelola ›</button></div>${av ? `<div class="avs">${av}</div>` : ''}${rows.length ? `<div class="slist">${rows.join('')}</div>` : '<div class="empty"><b>Belum ada event</b>Kelompokkan pemasukan dan pengeluaran per event.</div>'}</div>`;
 }
 
 /* Halaman */
@@ -111,16 +121,13 @@ function vBeranda() {
   const all = db.trx, cur = bulanIni(), pv = prevM(cur), A = trxB(cur), P = trxB(pv);
   const cm = sum(A, 'masuk'), ck = sum(A, 'keluar'), sel = cm - ck;
   const kini = urut(all).slice(0, 5);
-  return `<div class="head2"><h1>Dasbor Kas</h1><p class="sub">${esc(S.tagline)}${S.user ? ' · Halo, ' + esc(S.user) : ''}</p></div>
-  <div class="dash"><div class="col">
-    <div class="r1">${hero('Total saldo kas', all, `${sel >= 0 ? '+' : '−'}${rp(Math.abs(sel))} selisih bulan ini`, `<button class="pill dark" data-a="trx-baru">Catat</button><button class="pill white" data-a="evt-baru">Event baru</button><button class="circ2" data-go="laporan" aria-label="Buka laporan">${PANAH}</button>`)}
-      <div class="stats">${stat('Pemasukan', cm, '+', 'Bulan ini', chipP(cm, sum(P, 'masuk'), true))}${stat('Pengeluaran', ck, '−', 'Bulan ini', chipP(ck, sum(P, 'keluar'), false))}</div></div>
-    <div class="r2"><div class="card">${arus()}</div><div class="card" id="kDonut">${donutKartu()}</div></div>
+  return `<div class="dash"><div class="col">
+    <div class="head2"><h1>Dasbor Kas</h1><p class="sub">${esc(S.tagline)}${S.user ? ' · Halo, ' + esc(S.user) : ''}</p></div>
+    <div class="r1">${hero('Total saldo kas', all, `${sel >= 0 ? '+' : '−'}${rp(Math.abs(sel))} selisih bulan ini`, `<button class="pill dark" data-a="trx-baru">Catat</button><button class="pill white" data-a="evt-baru">Event baru<span class="pi">${PLUS}</span></button>`)}
+      <div class="stats">${stat('Pemasukan', cm, '+', 'Pemasukan bulan ini', chipP(cm, sum(P, 'masuk'), true), 'in')}${stat('Pengeluaran', ck, '−', 'Pengeluaran bulan ini', chipP(ck, sum(P, 'keluar'), false), 'out')}</div></div>
+    <div class="r2"><div class="card rev">${arus()}</div><div class="card spl" id="kDonut">${donutKartu()}</div></div>
     <div class="card"><div class="card-h"><h2>Transaksi terbaru<sup>${all.length}</sup></h2><button class="link" data-go="transaksi">Lihat semua ›</button></div>${kini.length ? kini.map(t => trow(t, false)).join('') : '<div class="empty"><b>Belum ada transaksi</b>Tekan tombol + untuk mencatat pemasukan atau pengeluaran pertama.</div>'}</div>
-  </div><aside class="col">
-    <div class="card"><div class="card-h"><h2>Event saya<sup>${db.events.length}</sup></h2><button class="btn soft sm" data-a="evt-baru">+ Tambah</button></div>${tumpukan()}</div>
-    <div class="card"><div class="card-h"><h2>Daftar event</h2><button class="link" data-go="event">Kelola ›</button></div>${daftarEvent()}</div>
-  </aside></div>`;
+  </div><aside class="card side">${panelKanan()}</aside></div>`;
 }
 
 function vEvent() {

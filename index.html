@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kas HAPIA</title>
-<meta name="theme-color" content="#08080f">
+<meta name="theme-color" content="#0b0c1b">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body data-bg="padang">
+<body data-bg="ethereal">
 <canvas id="langit" aria-hidden="true"></canvas>
 <canvas id="efek" aria-hidden="true"></canvas>
 
+<div class="shell">
 <header class="top">
   <a class="brand" href="#/beranda"><span class="logo"><img id="logo" src="assets/logo.png" alt="Logo"></span><b id="brandNama">HAPIA</b></a>
   <nav class="pills" id="nav">
@@ -31,6 +32,7 @@
 </header>
 
 <main id="root"></main>
+</div>
 <button class="fab" id="tambah" aria-label="Catat transaksi"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <dialog id="dTrx">
@@ -74,6 +76,7 @@
       <div class="tools"><button type="button" class="btn soft sm" id="gantiLogo">Ganti logo</button><button type="button" class="btn soft sm" id="resetLogo">Logo bawaan</button></div></div>
     <h3>Latar belakang</h3>
     <div class="bgs" id="bgs">
+      <label><input type="radio" name="bg" value="ethereal"><span class="th" style="background:radial-gradient(80% 70% at 85% 0,#2a2350,transparent),linear-gradient(180deg,#0b0c1b,#15162e)"></span><em>Ethereal</em><small>bawaan</small></label>
       <label><input type="radio" name="bg" value="padang"><span class="th" style="background:linear-gradient(180deg,#02080a 0 55%,#0d5a2a 100%)"></span><em>Padang malam</em><small>animasi</small></label>
       <label><input type="radio" name="bg" value="senja"><span class="th" style="background:radial-gradient(80% 70% at 15% 0,#8d78ff,transparent),radial-gradient(70% 60% at 100% 100%,#ff9d7a,transparent),#0c0b18"></span><em>Senja ungu</em></label>
       <label><input type="radio" name="bg" value="tengah"><span class="th" style="background:radial-gradient(90% 60% at 50% 0,#4b3fa8,transparent),#08080f"></span><em>Tengah malam</em></label>
