@@ -159,8 +159,8 @@ const vTrx = () => `<div class="head2"><h1>Transaksi</h1><p class="sub">Semua ca
 const isiLst = () => { const a = filt(); $('#lst').innerHTML = a.length ? a.map(t => trow(t, true)).join('') : `<div class="empty"><b>${db.trx.length ? 'Tidak ada hasil' : 'Belum ada transaksi'}</b>${db.trx.length ? 'Ubah kata kunci atau filter.' : 'Tekan tombol + untuk memulai.'}</div>`; };
 
 let lapB = bulanIni();
-const vLaporan = () => `<div class="head2"><h1>Laporan</h1><p class="sub">Rekap bulanan, ekspor data, cadangan, dan tampilan</p></div><div class="r2"><div class="card"><div class="card-h"><h2>Rekap bulanan</h2><input type="month" id="lb" value="${lapB}"></div><div id="rekap"></div></div>
-  <div class="card"><div class="card-h"><h2>Data &amp; tampilan</h2></div><p class="sub" style="margin-bottom:16px">Data tersimpan di peramban perangkat ini. Unduh cadangan secara berkala dan simpan di tempat aman.</p><div class="actions"><button class="btn soft sm" data-a="pengaturan">Ubah nama &amp; latar</button><button class="btn soft sm" data-a="csv">Unduh CSV</button><button class="btn soft sm" data-a="cetak">Cetak laporan bulan ini</button><button class="btn soft sm" data-a="cetak-all">Cetak semua periode</button><button class="btn soft sm" data-a="backup">Unduh cadangan</button><button class="btn soft sm" data-a="restore">Pulihkan cadangan</button><button class="btn red sm" data-a="reset">Hapus semua data</button></div></div></div>`;
+const vLaporan = () => `<div class="head2"><h1>Laporan</h1><p class="sub">Rekap bulanan, ekspor data, cadangan, dan tampilan</p></div><div class="r2"><div class="card"><div class="card-h"><h2>Rekap bulanan</h2><input type="month" id="lb" value="${lapB}"></div><div id="rekap"></div><div class="actions" style="margin-top:18px"><button class="btn lime sm" data-a="pdf">Unduh PDF bulan terpilih</button></div></div>
+  <div class="card"><div class="card-h"><h2>Data &amp; tampilan</h2></div><p class="sub" style="margin-bottom:16px">Data tersimpan di peramban perangkat ini. Unduh cadangan secara berkala dan simpan di tempat aman.</p><div class="actions"><button class="btn soft sm" data-a="pengaturan">Ubah nama &amp; latar</button><button class="btn lime sm" data-a="pdf-all">Unduh PDF semua periode</button><button class="btn soft sm" data-a="csv">Unduh CSV</button><button class="btn soft sm" data-a="cetak">Cetak bulan ini</button><button class="btn soft sm" data-a="cetak-all">Cetak semua</button><button class="btn soft sm" data-a="backup">Unduh cadangan</button><button class="btn soft sm" data-a="restore">Pulihkan cadangan</button><button class="btn red sm" data-a="reset">Hapus semua data</button></div></div></div>`;
 const isiRekap = () => { const a = trxB(lapB), m = sum(a, 'masuk'), k = sum(a, 'keluar'); $('#rekap').innerHTML = a.length ? `<div class="two" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:18px"><div><span class="sub">Masuk</span><b class="num" style="display:block;color:var(--lime)">${rp(m)}</b></div><div><span class="sub">Keluar</span><b class="num" style="display:block;color:var(--coral)">${rp(k)}</b></div><div><span class="sub">Selisih</span><b class="num" style="display:block">${rp(m - k)}</b></div></div><h3>Pemasukan</h3>${hbar(byKat(a, 'masuk'), '#c9f35c')}<h3>Pengeluaran</h3>${hbar(byKat(a, 'keluar'), '#f2765f')}` : `<div class="empty"><b>Tidak ada data</b>Belum ada transaksi di ${blnP(lapB)}.</div>`; };
 
 /* Gerak: indikator menu, riak klik, hitung angka */
@@ -282,6 +282,99 @@ function cetak(ym) {
   Promise.all(im.map(i => i.decode ? i.decode().catch(() => {}) : 0)).then(() => setTimeout(() => { print(); document.title = lama; }, 60));
 }
 
+/* Unduh laporan sebagai berkas PDF (A4, banyak halaman) */
+const H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+const muatH2C = () => window.html2canvas ? Promise.resolve() : new Promise((ok, gagal) => {
+  const s = document.createElement('script'); s.src = H2C; s.async = true; s.onload = ok; s.onerror = () => gagal(new Error('muat pustaka')); document.head.appendChild(s);
+});
+const jpegBytes = c => new Promise((ok, gagal) => c.toBlob(b => b ? b.arrayBuffer().then(x => ok(new Uint8Array(x))) : gagal(new Error('jpeg')), 'image/jpeg', .92));
+function rakitPdf(hal) {
+  const enc = new TextEncoder(), bag = [], off = []; let n = 0;
+  const put = x => { const u = typeof x === 'string' ? enc.encode(x) : x; bag.push(u); n += u.length; };
+  const W = 595.28, H = 841.89, tot = 2 + hal.length * 3;
+  put('%PDF-1.4\n');
+  off[1] = n; put('1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n');
+  off[2] = n; put(`2 0 obj\n<</Type/Pages/Count ${hal.length}/Kids[${hal.map((_, i) => (3 + i * 3) + ' 0 R').join(' ')}]>>\nendobj\n`);
+  hal.forEach((p, i) => {
+    const a = 3 + i * 3, ct = `q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+    off[a] = n; put(`${a} 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${H}]/Resources<</XObject<</Im0 ${a + 2} 0 R>>>>/Contents ${a + 1} 0 R>>\nendobj\n`);
+    off[a + 1] = n; put(`${a + 1} 0 obj\n<</Length ${ct.length}>>\nstream\n${ct}\nendstream\nendobj\n`);
+    off[a + 2] = n; put(`${a + 2} 0 obj\n<</Type/XObject/Subtype/Image/Width ${p.w}/Height ${p.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${p.b.length}>>\nstream\n`); put(p.b); put('\nendstream\nendobj\n');
+  });
+  const x = n; put(`xref\n0 ${tot + 1}\n0000000000 65535 f \n`);
+  for (let i = 1; i <= tot; i++) put(String(off[i]).padStart(10, '0') + ' 00000 n \n');
+  put(`trailer\n<</Size ${tot + 1}/Root 1 0 R>>\nstartxref\n${x}\n%%EOF`);
+  return new Blob(bag, { type: 'application/pdf' });
+}
+/* Bagi isi laporan ke halaman A4 (tabel dipotong per baris, kepala tabel diulang) */
+function susunHalaman(ym, stage) {
+  const MAXH = 1024, tmp = document.createElement('div'); tmp.innerHTML = susunLaporan(ym);
+  const ft = tmp.querySelector('.pr-foot'), fl = ft ? ft.children[0].textContent : '', fr = ft ? ft.children[1].textContent : '';
+  const blok = [...tmp.children].filter(e => e !== ft), hal = []; let cur;
+  const baru = () => { cur = document.createElement('div'); cur.className = 'pg'; cur.innerHTML = '<div class="pg-body"></div>'; cur.b = cur.firstChild; stage.appendChild(cur); hal.push(cur); };
+  const muat = () => cur.b.offsetHeight <= MAXH;
+  baru();
+  for (const el of blok) {
+    const tb = el.querySelector('table.pr-tb');
+    cur.b.appendChild(el);
+    if (muat()) continue;
+    if (!tb) { if (cur.b.children.length > 1) { cur.b.removeChild(el); baru(); cur.b.appendChild(el); } continue; }
+    cur.b.removeChild(el);
+    const rows = [...el.querySelectorAll('tbody tr')], foot = el.querySelector('tfoot');
+    const buat = lanj => { const s = el.cloneNode(true); s.querySelector('tbody').innerHTML = ''; const f = s.querySelector('tfoot'); if (f) f.remove(); if (lanj) s.querySelector('h2').append(' (lanjutan)'); return s; };
+    let sec = buat(false), body; const pasang = lanj => { sec = buat(lanj); cur.b.appendChild(sec); body = sec.querySelector('tbody'); };
+    pasang(false);
+    for (const r of rows) {
+      body.appendChild(r);
+      if (muat()) continue;
+      if (body.children.length > 1) { body.removeChild(r); baru(); pasang(true); body.appendChild(r); }
+      else if (cur.b.children.length > 1) { cur.b.removeChild(sec); baru(); cur.b.appendChild(sec); }
+    }
+    if (foot) {
+      sec.querySelector('table').appendChild(foot);
+      if (!muat()) {
+        const last = body.lastElementChild; sec.querySelector('table').removeChild(foot);
+        if (body.children.length > 1) { body.removeChild(last); baru(); pasang(true); body.appendChild(last); }
+        else { cur.b.removeChild(sec); baru(); cur.b.appendChild(sec); }
+        sec.querySelector('table').appendChild(foot);
+      }
+    }
+  }
+  hal.forEach((p, i) => { const f = document.createElement('div'); f.className = 'pg-foot'; const a = document.createElement('span'), b = document.createElement('span'); a.textContent = fl; b.innerHTML = esc(fr) + ' · Hal. <b>' + (i + 1) + '</b> dari ' + hal.length; f.append(a, b); p.appendChild(f); });
+  return hal;
+}
+let pdfSibuk = false;
+async function unduhPdf(ym) {
+  if (pdfSibuk) return;
+  if (ym ? !trxB(ym).length : !db.trx.length) return toast(ym ? 'Belum ada transaksi di ' + blnP(ym) : 'Belum ada data');
+  pdfSibuk = true;
+  const ov = document.createElement('div'); ov.id = 'pdfBusy'; ov.innerHTML = '<div class="pdfbox"><i class="spin"></i><b>Menyusun laporan PDF…</b><small>Mohon tunggu sebentar</small></div>';
+  const info = ov.querySelector('small'), stage = document.createElement('div'); stage.id = 'pdfStage';
+  const de = document.documentElement, ox = de.style.overflow, bx = document.body.style.overflow, sy = scrollY;
+  try {
+    document.body.append(stage, ov); de.style.overflow = document.body.style.overflow = 'hidden'; scrollTo(0, 0);
+    await muatH2C();
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const hal = susunHalaman(ym, stage);
+    await Promise.all([...stage.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => {}) : 0));
+    const out = [];
+    for (let i = 0; i < hal.length; i++) {
+      info.textContent = 'Halaman ' + (i + 1) + ' dari ' + hal.length;
+      await new Promise(r => setTimeout(r, 30));
+      const c = await window.html2canvas(hal[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 794 });
+      out.push({ b: await jpegBytes(c), w: c.width, h: c.height });
+    }
+    const nama = 'Laporan-Kas-' + (S.nama || 'Kas').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '') + '-' + (ym ? blnP(ym) : 'Semua-Periode').replace(/\s+/g, '-') + '.pdf';
+    unduh(nama, rakitPdf(out), 'application/pdf');
+    toast('PDF diunduh: ' + nama);
+  } catch (err) {
+    console.error(err);
+    toast('Gagal membuat PDF. Coba lagi, atau pakai tombol Cetak.');
+  } finally {
+    stage.remove(); ov.remove(); de.style.overflow = ox; document.body.style.overflow = bx; scrollTo(0, sy); pdfSibuk = false;
+  }
+}
+
 /* Router */
 function render(quiet) {
   const [, r = 'beranda', p] = location.hash.replace('#', '').split('/');
@@ -365,7 +458,7 @@ $('#resetSet').onclick = () => { S = { ...DEF }; simpanS(); terapkan(); isiPenga
 $('#cari').onclick = () => { location.hash = '#/transaksi'; setTimeout(() => { const q = $('#q'); if (q) q.focus(); }, 60); };
 
 /* Aksi */
-function unduh(n, s, t) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: t })); a.download = n; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e3); }
+function unduh(n, s, t) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: t })); a.download = n; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 3e4); }
 $('#root').addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { location.hash = '#/' + g.dataset.go; return; }
   const b = e.target.closest('[data-a]'); if (!b) return; const id = +b.dataset.id, a = b.dataset.a;
@@ -379,6 +472,8 @@ $('#root').addEventListener('click', e => {
   else if (a === 'serie') { serie = serie === 'masuk' ? 'keluar' : 'masuk'; render(true); }
   else if (a === 'donutp') { donutP = donutP === 'bulan' ? 'semua' : 'bulan'; render(true); }
   else if (a === 'pengaturan') bukaSet();
+  else if (a === 'pdf') unduhPdf(lapB);
+  else if (a === 'pdf-all') unduhPdf(null);
   else if (a === 'cetak') cetak(lapB);
   else if (a === 'cetak-all') cetak(null);
   else if (a === 'backup') unduh('cadangan-kas-' + hariIni() + '.json', JSON.stringify({ v: 3, ...db, set: S }), 'application/json');
